@@ -32,9 +32,14 @@ Senior DataOps portfolio project that demonstrates:
    - cp .env.example .env
 6. Set a real Airflow fernet key in .env:
    - AIRFLOW_FERNET_KEY can be generated with: python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
-7. Start the full local stack:
+7. Set secure secrets in .env before first run:
+   - POSTGRES_PASSWORD
+   - DBT_PASSWORD
+   - AIRFLOW_ADMIN_PASSWORD
+   - AIRFLOW_WEBSERVER_SECRET_KEY
+8. Start the full local stack:
    - ./scripts/vm/first_run.sh
-8. Validate the stack:
+9. Validate the stack:
    - ./scripts/vm/validate_stack.sh
 
 ## Service Endpoints
@@ -95,6 +100,8 @@ Expected success criteria:
 ## Notes
 - Airflow is configured with LocalExecutor.
 - dbt profile is checked in at dbt/profiles.yml and uses environment variables.
+- Local compose ports are bound to localhost only for safer host exposure.
+- CI requires GitHub Actions secret CI_DBT_PASSWORD.
 - PostgreSQL schemas created on initialization:
   - raw_data
   - analytics_dev

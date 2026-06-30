@@ -71,7 +71,7 @@ conn = psycopg2.connect(
     host=os.getenv("DBT_HOST", "postgres"),
     port=int(os.getenv("DBT_PORT", "5432")),
     user=os.getenv("DBT_USER", "dataops"),
-    password=os.getenv("DBT_PASSWORD", "dataops123"),
+    password=os.environ["DBT_PASSWORD"],
     dbname=os.getenv("DBT_DBNAME", "postgres"),
 )
 

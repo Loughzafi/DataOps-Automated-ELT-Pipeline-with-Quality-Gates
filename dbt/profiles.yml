@@ -6,7 +6,7 @@ dataops_elt:
       host: "{{ env_var('DBT_HOST', 'postgres') }}"
       port: 5432
       user: "{{ env_var('DBT_USER', 'dataops') }}"
-      password: "{{ env_var('DBT_PASSWORD', 'dataops123') }}"
+      password: "{{ env_var('DBT_PASSWORD') }}"
       dbname: "{{ env_var('DBT_DBNAME', 'postgres') }}"
       schema: analytics_dev
       threads: 4
@@ -16,7 +16,7 @@ dataops_elt:
       host: "{{ env_var('DBT_HOST', 'postgres') }}"
       port: 5432
       user: "{{ env_var('DBT_USER', 'dataops') }}"
-      password: "{{ env_var('DBT_PASSWORD', 'dataops123') }}"
+      password: "{{ env_var('DBT_PASSWORD') }}"
       dbname: "{{ env_var('DBT_DBNAME', 'postgres') }}"
       schema: analytics_ci
       threads: 4
@@ -26,7 +26,7 @@ dataops_elt:
       host: "{{ env_var('DBT_HOST', 'postgres') }}"
       port: 5432
       user: "{{ env_var('DBT_USER', 'dataops') }}"
-      password: "{{ env_var('DBT_PASSWORD', 'dataops123') }}"
+      password: "{{ env_var('DBT_PASSWORD') }}"
       dbname: "{{ env_var('DBT_DBNAME', 'postgres') }}"
       schema: analytics_prod
       threads: 4

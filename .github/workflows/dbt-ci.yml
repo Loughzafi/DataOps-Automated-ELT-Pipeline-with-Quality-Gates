@@ -11,14 +11,14 @@ jobs:
       DBT_HOST: 127.0.0.1
       DBT_PORT: "5432"
       DBT_USER: dataops
-      DBT_PASSWORD: dataops123
+      DBT_PASSWORD: ${{ secrets.CI_DBT_PASSWORD }}
       DBT_DBNAME: postgres
     services:
       postgres:
         image: postgres:16
         env:
           POSTGRES_USER: dataops
-          POSTGRES_PASSWORD: dataops123
+          POSTGRES_PASSWORD: ${{ secrets.CI_DBT_PASSWORD }}
           POSTGRES_DB: postgres
         ports:
           - 5432:5432
@@ -40,7 +40,7 @@ jobs:
       - name: Install dbt
         run: |
           python -m pip install --upgrade pip
-          pip install dbt-core dbt-postgres
+          pip install dbt-core==1.9.2 dbt-postgres==1.9.0
 
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
@@ -54,7 +54,7 @@ jobs:
 
       - name: Initialize warehouse schemas and seed data
         env:
-          PGPASSWORD: dataops123
+          PGPASSWORD: ${{ secrets.CI_DBT_PASSWORD }}
         run: psql -h "$DBT_HOST" -U "$DBT_USER" -d "$DBT_DBNAME" -f infra/postgres/init.sql
 
       - name: Run dbt build on CI target

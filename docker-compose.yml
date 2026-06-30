@@ -1,0 +1,123 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: dataops-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  airflow-init:
+    build:
+      context: ./infra/airflow
+      dockerfile: Dockerfile
+    container_name: dataops-airflow-init
+    user: "${AIRFLOW_UID:-50000}:0"
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/${POSTGRES_DB}?options=-csearch_path%3Dairflow_meta%2Cpublic
+      AIRFLOW__DATABASE__SQL_ALCHEMY_SCHEMA: airflow_meta
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__WEBSERVER__SECRET_KEY: dataops-airflow-secret
+      DBT_HOST: postgres
+      DBT_PORT: ${POSTGRES_PORT}
+      DBT_USER: ${POSTGRES_USER}
+      DBT_PASSWORD: ${POSTGRES_PASSWORD}
+      DBT_DBNAME: ${POSTGRES_DB}
+    volumes:
+      - ./infra/airflow/dags:/opt/airflow/dags
+      - ./dbt:/opt/airflow/dbt
+      - ./dbt/profiles.yml:/opt/airflow/.dbt/profiles.yml
+      - airflow_logs:/opt/airflow/logs
+    command: >
+      bash -c "
+      airflow db migrate &&
+      airflow users create --username ${AIRFLOW_ADMIN_USER} --password ${AIRFLOW_ADMIN_PASSWORD} --firstname DataOps --lastname Admin --role Admin --email ${AIRFLOW_ADMIN_EMAIL} || true
+      "
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  airflow-webserver:
+    build:
+      context: ./infra/airflow
+      dockerfile: Dockerfile
+    container_name: dataops-airflow-webserver
+    restart: unless-stopped
+    user: "${AIRFLOW_UID:-50000}:0"
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/${POSTGRES_DB}?options=-csearch_path%3Dairflow_meta%2Cpublic
+      AIRFLOW__DATABASE__SQL_ALCHEMY_SCHEMA: airflow_meta
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__WEBSERVER__SECRET_KEY: dataops-airflow-secret
+      DBT_HOST: postgres
+      DBT_PORT: ${POSTGRES_PORT}
+      DBT_USER: ${POSTGRES_USER}
+      DBT_PASSWORD: ${POSTGRES_PASSWORD}
+      DBT_DBNAME: ${POSTGRES_DB}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./infra/airflow/dags:/opt/airflow/dags
+      - ./dbt:/opt/airflow/dbt
+      - ./dbt/profiles.yml:/opt/airflow/.dbt/profiles.yml
+      - airflow_logs:/opt/airflow/logs
+    command: webserver
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-scheduler:
+    build:
+      context: ./infra/airflow
+      dockerfile: Dockerfile
+    container_name: dataops-airflow-scheduler
+    restart: unless-stopped
+    user: "${AIRFLOW_UID:-50000}:0"
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT}/${POSTGRES_DB}?options=-csearch_path%3Dairflow_meta%2Cpublic
+      AIRFLOW__DATABASE__SQL_ALCHEMY_SCHEMA: airflow_meta
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      DBT_HOST: postgres
+      DBT_PORT: ${POSTGRES_PORT}
+      DBT_USER: ${POSTGRES_USER}
+      DBT_PASSWORD: ${POSTGRES_PASSWORD}
+      DBT_DBNAME: ${POSTGRES_DB}
+    volumes:
+      - ./infra/airflow/dags:/opt/airflow/dags
+      - ./dbt:/opt/airflow/dbt
+      - ./dbt/profiles.yml:/opt/airflow/.dbt/profiles.yml
+      - airflow_logs:/opt/airflow/logs
+    command: scheduler
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+  metabase:
+    image: metabase/metabase:latest
+    container_name: dataops-metabase
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  airflow_logs:

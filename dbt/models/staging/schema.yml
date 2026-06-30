@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: stg_users
+    description: Cleaned users staging model.
+    columns:
+      - name: user_id
+        tests:
+          - not_null
+          - unique
+      - name: email
+        tests:
+          - not_null
+
+  - name: stg_orders
+    description: Cleaned orders staging model.
+    columns:
+      - name: order_id
+        tests:
+          - not_null
+          - unique
+      - name: user_id
+        tests:
+          - not_null
+      - name: order_status
+        tests:
+          - accepted_values:
+              values: ['completed', 'cancelled', 'pending']

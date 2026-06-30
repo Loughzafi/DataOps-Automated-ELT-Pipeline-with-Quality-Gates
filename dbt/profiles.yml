@@ -1,0 +1,33 @@
+dataops_elt:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('DBT_HOST', 'postgres') }}"
+      port: 5432
+      user: "{{ env_var('DBT_USER', 'dataops') }}"
+      password: "{{ env_var('DBT_PASSWORD', 'dataops123') }}"
+      dbname: "{{ env_var('DBT_DBNAME', 'postgres') }}"
+      schema: analytics_dev
+      threads: 4
+      connect_timeout: 10
+    ci:
+      type: postgres
+      host: "{{ env_var('DBT_HOST', 'postgres') }}"
+      port: 5432
+      user: "{{ env_var('DBT_USER', 'dataops') }}"
+      password: "{{ env_var('DBT_PASSWORD', 'dataops123') }}"
+      dbname: "{{ env_var('DBT_DBNAME', 'postgres') }}"
+      schema: analytics_ci
+      threads: 4
+      connect_timeout: 10
+    prod:
+      type: postgres
+      host: "{{ env_var('DBT_HOST', 'postgres') }}"
+      port: 5432
+      user: "{{ env_var('DBT_USER', 'dataops') }}"
+      password: "{{ env_var('DBT_PASSWORD', 'dataops123') }}"
+      dbname: "{{ env_var('DBT_DBNAME', 'postgres') }}"
+      schema: analytics_prod
+      threads: 4
+      connect_timeout: 10

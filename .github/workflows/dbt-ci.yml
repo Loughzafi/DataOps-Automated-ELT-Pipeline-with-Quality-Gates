@@ -1,0 +1,62 @@
+name: dbt-ci
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      DBT_HOST: 127.0.0.1
+      DBT_PORT: "5432"
+      DBT_USER: dataops
+      DBT_PASSWORD: dataops123
+      DBT_DBNAME: postgres
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: dataops
+          POSTGRES_PASSWORD: dataops123
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U dataops -d postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dbt
+        run: |
+          python -m pip install --upgrade pip
+          pip install dbt-core dbt-postgres
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Wait for Postgres
+        run: |
+          for i in {1..30}; do
+            pg_isready -h "$DBT_HOST" -p "$DBT_PORT" -U "$DBT_USER" -d "$DBT_DBNAME" && break
+            sleep 2
+          done
+
+      - name: Initialize warehouse schemas and seed data
+        env:
+          PGPASSWORD: dataops123
+        run: psql -h "$DBT_HOST" -U "$DBT_USER" -d "$DBT_DBNAME" -f infra/postgres/init.sql
+
+      - name: Run dbt build on CI target
+        working-directory: dbt
+        run: dbt build --project-dir . --profiles-dir . --target ci

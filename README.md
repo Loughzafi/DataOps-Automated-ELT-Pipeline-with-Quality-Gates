@@ -109,6 +109,19 @@ Expected success criteria:
   - analytics_prod
   - airflow_meta
 
+## CI Secrets Setup
+Configure this repository secret before running the dbt CI workflow:
+
+1. In GitHub, open repository Settings -> Secrets and variables -> Actions.
+2. Click New repository secret.
+3. Name: CI_DBT_PASSWORD
+4. Value: strong password used by CI Postgres service.
+5. Save and rerun the workflow.
+
+Security notes:
+- Never commit this value to files, logs, or PR comments.
+- Rotate the secret if it is ever exposed.
+
 ## Week 1 Objective
 Bring up PostgreSQL and Metabase, create raw and analytics schemas, and seed deterministic sample data.
 
